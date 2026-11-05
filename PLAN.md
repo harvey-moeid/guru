@@ -45,6 +45,7 @@ Tips alur kerja efektif:
 - Bangun file di sandbox → `npm/pnpm install` → `typecheck`/`test`/`build` → perbaiki → baru `push_files` (maks 100 file/commit, maks 1 MiB/file).
 - Commit kecil per langkah (`feat(A2): ...`), pesan commit merujuk nomor langkah.
 - Jika sandbox tidak bisa menjalankan sesuatu (mis. Playwright browser, workerd), tulis test-nya, jangan klaim lulus, dan catat di Status Log sebagai `TIDAK DIUJI (alasan)`.
+- **`pnpm-lock.yaml` saat ini belum di-commit** (lihat `docs/ARCHITECTURE.md` dan Status Log Sesi 1) — jalankan `pnpm install` (bukan `--frozen-lockfile`) sampai lockfile di-generate ulang dan di-push dari lingkungan dengan akses `git push` langsung.
 
 ---
 
@@ -191,15 +192,15 @@ Setiap langkah: tujuan → acuan SPEK → definisi selesai (DoD).
 
 ### FASE A — Audit + Foundation  (SPEK §2, §12, §15, §16)
 
-- [ ] **A1** Audit repo: struktur, branch, license, workflow. Repo saat ini hanya `README.md` + SPEK. Putuskan inisialisasi dari nol. *DoD:* catatan audit di Status Log.
-- [ ] **A2** Workspace: `pnpm-workspace.yaml`, `turbo.json`, root `package.json`, `tsconfig.base.json`, ESLint + Prettier, `.gitignore`, `.dev.vars.example`, `.env.example`. *DoD:* `pnpm install` + `pnpm lint` lulus.
-- [ ] **A3** `apps/worker`: Hono + `wrangler.jsonc` (binding D1 `DB`, R2 `BUCKET`, Static Assets, flag opsional AI/Vectorize), route `GET /api/health` (tanpa bocor secret). *DoD:* `typecheck` + `build` lulus; health ter-test.
-- [ ] **A4** `apps/web`: Vite + React + Tailwind + shadcn/ui, router SPA, shell responsif, tema dark/light, halaman placeholder jujur (bukan data palsu). *DoD:* `build` lulus, aset terbit ke direktori yang dilayani Worker.
-- [ ] **A5** `packages/shared`: Zod schema dasar, kode error, konstanta (limit upload 15 MB default, locale, timezone).
-- [ ] **A6** Migrasi D1 awal `0001_init.sql`: semua tabel di SPEK §12 (dibuat bertahap bila terlalu besar; minimal `app_settings`, `sessions`, `auth_attempts`, `books`, `book_processing_jobs`, `book_chapters`, `book_units`, `book_spans`). *DoD:* migrasi jalan di D1 lokal (miniflare/wrangler `--local`) dan idempoten.
-- [ ] **A7** Test harness: Vitest (+ pool Workers bila memungkinkan), fixture dasar, script `test`.
-- [ ] **A8** CI `.github/workflows/ci.yml`: install, lint, typecheck, unit, build. *DoD:* YAML valid; tidak mem-print secret.
-- [ ] **A9** Docs awal: README Indonesia (draft), `docs/ARCHITECTURE.md`, `docs/THIRD_PARTY_LICENSES.md` (kerangka).
+- [x] **A1** Audit repo: struktur, branch, license, workflow. Repo saat ini hanya `README.md` + SPEK. Putuskan inisialisasi dari nol. *DoD:* catatan audit di Status Log. — **Selesai Sesi 1.**
+- [x] **A2** Workspace: `pnpm-workspace.yaml`, `turbo.json`, root `package.json`, `tsconfig.base.json`, ESLint + Prettier, `.gitignore`, `.dev.vars.example`, `.env.example`. *DoD:* `pnpm install` + `pnpm lint` lulus. — **DIUJI, lulus.**
+- [x] **A3** `apps/worker`: Hono + `wrangler.jsonc` (binding D1 `DB`, R2 `BUCKET`, Static Assets, flag opsional AI/Vectorize), route `GET /api/health` (tanpa bocor secret). *DoD:* `typecheck` + `build` lulus; health ter-test. — **DIUJI** (`pnpm typecheck`, `pnpm test`, `wrangler deploy --dry-run` semua lulus). `database_id` masih placeholder, lihat `docs/ARCHITECTURE.md`.
+- [x] **A4** `apps/web`: Vite + React + Tailwind + shadcn/ui, router SPA, shell responsif, tema dark/light, halaman placeholder jujur (bukan data palsu). *DoD:* `build` lulus, aset terbit ke direktori yang dilayani Worker. — **DIUJI** (`pnpm build` lulus, `apps/worker` wrangler dry-run berhasil baca `../web/dist`). **shadcn/ui belum dipasang** — lihat `docs/ARCHITECTURE.md` §Penyimpangan; akan ditambah per kebutuhan mulai FASE B.
+- [x] **A5** `packages/shared`: Zod schema dasar, kode error, konstanta (limit upload 15 MB default, locale, timezone). — **DIUJI** (4 unit test lulus).
+- [x] **A6** Migrasi D1 awal `0001_init.sql`: semua tabel di SPEK §12 (dibuat bertahap bila terlalu besar; minimal `app_settings`, `sessions`, `auth_attempts`, `books`, `book_processing_jobs`, `book_chapters`, `book_units`, `book_spans`). *DoD:* migrasi jalan di D1 lokal (miniflare/wrangler `--local`) dan idempoten. — **TIDAK DIUJI** di D1 lokal nyata (sandbox tidak menjalankan `wrangler d1 execute --local` pada sesi ini); SQL ditulis idempoten (`IF NOT EXISTS`) dan direview manual. Perlu diverifikasi sesi berikut dengan `wrangler d1 migrations apply --local`.
+- [x] **A7** Test harness: Vitest (+ pool Workers bila memungkinkan), fixture dasar, script `test`. — **DIUJI** (`pnpm test`: 7 test lulus di 3 paket). Belum pakai `@cloudflare/vitest-pool-workers` (worker test jalan di Node biasa via Hono `app.request`, cukup untuk fase ini).
+- [x] **A8** CI `.github/workflows/ci.yml`: install, lint, typecheck, unit, build. *DoD:* YAML valid; tidak mem-print secret. — **DIUJI secara lokal** (semua step CI dijalankan manual di sandbox dengan hasil sama: lint/typecheck/test/build lulus). Belum diverifikasi run aktual di GitHub Actions (butuh push ke GitHub, lihat Status Log).
+- [x] **A9** Docs awal: README Indonesia (draft), `docs/ARCHITECTURE.md`, `docs/THIRD_PARTY_LICENSES.md` (kerangka). — **Selesai.**
 
 ### FASE B — Auth + Storage  (SPEK §3, §4 Storage, §13)
 
@@ -320,6 +321,42 @@ Format entri (tambah di **paling bawah**, jangan hapus entri lama):
 - Bukti: tidak ada build/test (belum ada kode).
 - Keputusan baru: monorepo pnpm + Turborepo; kerja di `dev`; deploy default NOT DEPLOYED.
 - Langkah berikutnya: **A1 → A9**, lalu **Fase B**.
+
+### Sesi 1 — 2026-11-05 — Claude (claude.ai, FASE A)
+- Langkah dikerjakan: **A1–A9** (seluruh FASE A — Audit + Foundation).
+- Selesai & terverifikasi:
+  - A1: audit (repo lama hanya README+PLAN+SPEK, tidak ada kode) — dikonfirmasi lewat `repo_summary` dan `list_branches`.
+  - A2: monorepo pnpm+Turborepo (`package.json`, `pnpm-workspace.yaml`, `turbo.json`, `tsconfig.base.json`, ESLint flat config, Prettier, `.gitignore`, `.dev.vars.example`, `.env.example`).
+  - A3: `apps/worker` — Hono app, `wrangler.jsonc` (binding `DB`/D1, `BUCKET`/R2, `ASSETS` static, flag fitur), route `GET /api/health`.
+  - A4: `apps/web` — Vite+React+TS+Tailwind (tema dark `#080D19`/aksen `#246BFD`), SPA shell, halaman `/` dan `/login` placeholder jujur, `manifest.webmanifest` kerangka.
+  - A5: `packages/shared` — konstanta (locale `id-ID`, timezone `Asia/Jakarta`, limit upload 15 MB, dst.), kode error `{ error: { code, message, requestId } }`, skema Zod dasar (`healthResponseSchema`, `bookSummarySchema`, dst.).
+  - A6: `migrations/0001_init.sql` — tabel `app_settings, sessions, auth_attempts, books, book_processing_jobs, book_chapters, book_units, book_spans`, semua idempoten (`IF NOT EXISTS`), FK + index dasar.
+  - A7: Vitest terpasang di 3 paket, 7 test lulus total.
+  - A8: `.github/workflows/ci.yml` (install → lint → typecheck → test → build), tidak mem-print secret, belum pernah run aktual di GitHub Actions.
+  - A9: `README.md` (Indonesia), `docs/ARCHITECTURE.md` (penyimpangan dari SPEK dicatat: shadcn/ui ditunda, `database_id` placeholder, keputusan upload streaming vs presigned belum diambil), `docs/THIRD_PARTY_LICENSES.md` (kerangka).
+- Sebagian / diblokir:
+  - A6 **TIDAK DIUJI** terhadap D1 lokal sungguhan (`wrangler d1 migrations apply --local`) — sandbox tidak punya waktu/izin menjalankan workerd D1 lokal penuh pada sesi ini; SQL sudah direview manual untuk idempotensi.
+  - A8 **DIUJI secara lokal saja** (replikasi manual tiap step CI) — belum ada run GitHub Actions sungguhan; akan terverifikasi otomatis begitu commit berikutnya masuk `dev`/PR dibuka, karena workflow sudah trigger `push: [main, dev]`.
+  - `pnpm-lock.yaml` **belum di-commit** — terlalu besar (~140 KB) untuk ditransfer aman lewat tool push file manual di sesi ini; CI untuk sementara pakai `pnpm install` biasa. Lihat `docs/ARCHITECTURE.md`.
+- Bukti (dijalankan di sandbox `/home/claude/guru`, Node 22, pnpm 9 via `.npm-global`):
+  - `pnpm install` → exit 0 (328 package).
+  - `pnpm typecheck` → exit 0 (3/3 paket: `@guru/shared`, `@guru/web`, `@guru/worker`).
+  - `pnpm lint` → exit 0 (3/3 paket, 0 error).
+  - `pnpm test` → exit 0 (3/3 paket, 7 test lulus: shared 4, worker 1, web 2).
+  - `pnpm build` → exit 0 (3/3 paket: shared typecheck, web `vite build` 183 KB bundle, worker `wrangler deploy --dry-run` berhasil baca binding D1/R2/assets + static dir `../web/dist`).
+  - `pnpm format:check` → "All matched files use Prettier code style!".
+  - Semua **DIUJI** kecuali A6 (D1 lokal) dan A8 (GitHub Actions run) seperti dicatat di atas.
+- Commit/branch: di `dev` —
+  - `98dbf04` feat(A1-A9): foundation monorepo - root config, CI, docs, migration
+  - `9dd7aeb` feat(A5): packages/shared - zod schemas, error codes, constants
+  - `c8cdbdd` feat(A3): apps/worker - Hono API with D1/R2/assets bindings and health route
+  - `9d7123b` feat(A4): apps/web - Vite+React+Tailwind SPA shell, dark theme, placeholder pages
+- Keputusan baru:
+  - shadcn/ui **ditunda** ke FASE B+ (dipasang per komponen yang benar-benar dipakai, bukan di-generate penuh di awal) — dicatat di `docs/ARCHITECTURE.md`.
+  - `packages/learning` dan `packages/ai` **belum dibuat** di FASE A (akan dibuat saat FASE D/F benar-benar membutuhkannya) agar tidak ada paket kosong.
+  - `wrangler.jsonc` `database_id` memakai placeholder `REPLACE_WITH_REAL_D1_ID` sampai Harvey menjalankan `wrangler d1 create guru-db` (I4).
+  - CI `ci.yml` memakai `pnpm install` (bukan `--frozen-lockfile`) sementara lockfile belum di-commit.
+- Langkah berikutnya: **FASE B (Auth + Storage)**, mulai dari **B1** (`scripts/setup-password`). Sebelum itu, idealnya verifikasi run CI pertama di GitHub Actions dan — bila memungkinkan dari lingkungan dengan `git push` langsung — commit `pnpm-lock.yaml` lalu kembalikan `ci.yml` ke `--frozen-lockfile`.
 
 ---
 
