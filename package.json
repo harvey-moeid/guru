@@ -6,7 +6,7 @@
   "description": "BYGA AI Guru Privat - PWA belajar buku Inggris dengan tutor AI Bahasa Indonesia",
   "license": "UNLICENSED",
   "engines": {
-    "node": ">=20"
+    "node": ">=22.13"
   },
   "packageManager": "pnpm@9.15.0",
   "scripts": {
@@ -14,9 +14,10 @@
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
-    "test": "turbo run test",
+    "test": "turbo run test && pnpm test:scripts",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "test:scripts": "node --test scripts/lib/password.test.mjs"
   },
   "devDependencies": {
     "turbo": "^2.3.3",
