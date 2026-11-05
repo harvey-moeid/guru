@@ -1,0 +1,38 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "guru-worker",
+  "main": "src/index.ts",
+  "compatibility_date": "2024-12-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true
+  },
+  // Static assets (SPA apps/web build) dilayani satu domain dengan API.
+  // Jalur sebenarnya diisi setelah apps/web dibangun (FASE A4).
+  "assets": {
+    "directory": "../web/dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application"
+  },
+  // D1: diisi oleh pemilik setelah `wrangler d1 create guru-db`.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "guru-db",
+      "database_id": "REPLACE_WITH_REAL_D1_ID",
+      "migrations_dir": "../../migrations",
+    },
+  ],
+  // R2: diisi oleh pemilik setelah `wrangler r2 bucket create guru-files`.
+  "r2_buckets": [
+    {
+      "binding": "BUCKET",
+      "bucket_name": "guru-files",
+    },
+  ],
+  // Flag fitur opsional (SPEK: Vectorize/Workflows/Workers AI tidak boleh jadi blocker).
+  "vars": {
+    "FEATURE_VECTORIZE_ENABLED": "false",
+    "FEATURE_WORKERS_AI_ENABLED": "false",
+  },
+}
