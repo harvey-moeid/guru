@@ -12,14 +12,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Versi pnpm diambil dari field "packageManager" di package.json.
+      # Jangan tambahkan `version:` di sini: action v4 menolak dua sumber versi.
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
+      # `cache: pnpm` butuh pnpm-lock.yaml; aktifkan lagi setelah lockfile di-commit.
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: pnpm
 
       - name: Install
         run: pnpm install
