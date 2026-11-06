@@ -2,6 +2,7 @@ import app from "../index";
 import type { Env } from "../env";
 import { hmacSha256Hex } from "../lib/crypto";
 import { createTestDb } from "./d1-shim";
+import { createTestBucket } from "./r2-shim";
 
 export const TEST_PASSWORD = "Xk9mQ2vR7tLp4NwZ8bYc3HdF6gJs5AeU";
 const PEPPER = "test-pepper-value";
@@ -13,7 +14,7 @@ export async function makeEnv(
 ): Promise<Env> {
   return {
     DB: await createTestDb(),
-    BUCKET: {} as R2Bucket,
+    BUCKET: createTestBucket(),
     ASSETS: undefined as unknown as Fetcher,
     FEATURE_VECTORIZE_ENABLED: "false",
     FEATURE_WORKERS_AI_ENABLED: "false",

@@ -30,3 +30,13 @@ export const loginRequestSchema = z.object({
   password: z.string().min(1).max(256),
 });
 export type LoginRequest = z.infer<typeof loginRequestSchema>;
+
+/** Body POST /api/books (B7): metadata sebelum unggah. SHA-256 dihitung di browser (C3). */
+export const createBookRequestSchema = z.object({
+  title: z.string().trim().min(1).max(500),
+  author: z.string().trim().max(300).optional(),
+  extension: bookExtensionSchema,
+  sha256: z.string().regex(/^[0-9a-f]{64}$/, "SHA-256 harus 64 karakter hex huruf kecil"),
+  sizeBytes: z.number().int().positive(),
+});
+export type CreateBookRequest = z.infer<typeof createBookRequestSchema>;

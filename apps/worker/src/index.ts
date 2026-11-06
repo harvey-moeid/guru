@@ -5,6 +5,7 @@ import { errorResponse } from "./lib/http";
 import { requireSession } from "./middleware/auth";
 import { csrfProtection, requestContext } from "./middleware/security";
 import { authRoutes } from "./routes/auth";
+import { bookRoutes } from "./routes/books";
 
 const app = new Hono<AppEnv>();
 
@@ -26,8 +27,9 @@ app.get("/api/health", (c) => {
 });
 
 app.route("/api/auth", authRoutes);
+app.route("/api/books", bookRoutes);
 
-// Rute buku, terjemahan, tutor, dst. ditambahkan di fase berikutnya.
+// Rute terjemahan, tutor, dst. ditambahkan di fase berikutnya.
 
 app.notFound((c) => {
   if (new URL(c.req.url).pathname.startsWith("/api/")) {
