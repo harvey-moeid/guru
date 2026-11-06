@@ -20,3 +20,13 @@ export interface Env {
   AI_PROVIDER_MODEL?: string;
   GEMINI_API_KEY?: string;
 }
+
+/** Tipe Hono bersama: binding + variabel per-request. */
+export type AppEnv = {
+  Bindings: Env;
+  Variables: {
+    requestId: string;
+    sessionId?: string;
+    sessionExpiresAt?: string;
+  };
+};

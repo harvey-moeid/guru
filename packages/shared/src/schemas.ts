@@ -24,3 +24,9 @@ export const bookSummarySchema = z.object({
 export type BookSummary = z.infer<typeof bookSummarySchema>;
 
 export const readerModeSchema = z.enum(READER_MODES);
+
+/** Body POST /api/auth/login (B2). Batas panjang mencegah body abusif. */
+export const loginRequestSchema = z.object({
+  password: z.string().min(1).max(256),
+});
+export type LoginRequest = z.infer<typeof loginRequestSchema>;
