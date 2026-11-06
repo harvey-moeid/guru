@@ -1,0 +1,16 @@
+# Salin ke .dev.vars (JANGAN commit .dev.vars yang sebenarnya).
+# Dipakai oleh `wrangler dev` untuk apps/worker.
+
+# Password login: pepper HMAC + hash verifier (bukan password mentah).
+# Hasilkan lewat scripts/setup-password (lihat FASE B).
+AUTH_PEPPER=
+AUTH_PASSWORD_HASH=
+SESSION_SIGNING_SECRET=
+
+# Provider AI opsional (OpenAI-compatible: OpenRouter/Groq, dsb.)
+AI_PROVIDER_API_KEY=
+AI_PROVIDER_BASE_URL=
+AI_PROVIDER_MODEL=
+
+# Gemini opsional
+GEMINI_API_KEY=

@@ -1,0 +1,30 @@
+{
+  "name": "guru",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "BYGA AI Guru Privat - PWA belajar buku Inggris dengan tutor AI Bahasa Indonesia",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test && pnpm test:scripts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test:scripts": "node --test scripts/lib/password.test.mjs"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.2",
+    "prettier": "^3.4.2",
+    "eslint": "^9.17.0",
+    "@typescript-eslint/eslint-plugin": "^8.19.0",
+    "@typescript-eslint/parser": "^8.19.0"
+  }
+}

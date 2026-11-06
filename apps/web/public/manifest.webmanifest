@@ -1,0 +1,10 @@
+{
+  "name": "BYGA AI Guru Privat",
+  "short_name": "Guru",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#080D19",
+  "theme_color": "#080D19",
+  "lang": "id",
+  "icons": []
+}
