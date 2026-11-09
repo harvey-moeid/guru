@@ -204,16 +204,16 @@ Setiap langkah: tujuan → acuan SPEK → definisi selesai (DoD).
 
 ### FASE B — Auth + Storage  (SPEK §3, §4 Storage, §13)
 
-- [ ] **B1** `scripts/setup-password`: generator password acak 24–32+ karakter / validator entropi; cetak instruksi `wrangler secret put` (jangan simpan password).
-- [ ] **B2** Verifikasi HMAC-SHA-256 + pepper, perbandingan constant-time; secret terpisah untuk verifier & signing session. `POST /api/auth/login`.
-- [ ] **B3** Session opaque: token acak, **hash di D1**, cookie `HttpOnly; Secure; SameSite`, TTL, rotasi, `POST /api/auth/logout` benar-benar invalidasi, `GET /api/auth/session`. `Cache-Control: no-store` untuk data privat.
-- [ ] **B4** Rate limit + lockout persisten di D1 (`auth_attempts`), tanpa log password.
-- [ ] **B5** Origin/CSRF check semua mutasi; CORS same-origin ketat; security headers (CSP kompatibel PDF.js/worker, nosniff, frame-ancestors, referrer-policy, HSTS).
-- [ ] **B6** Middleware auth untuk semua `/api/*` selain login/health; uji akses anonim ditolak.
-- [ ] **B7** CRUD buku: `GET/POST /api/books`, `DELETE /api/books/:id` (hapus konsisten R2 + FTS + terkait), `POST /api/books/:id/upload` (stream ke R2 atau presigned PUT — putuskan lewat uji CPU/memori, catat keputusan di `docs/ARCHITECTURE.md`).
-- [ ] **B8** Halaman `/login` (password-only, show/hide, loading, error sederhana) + guard route SPA.
-- [ ] **B9** Tes: salah password, brute force, tampering cookie, expiry, logout, replay, CSRF, akses tanpa login, proteksi R2.
-- [ ] **B10** `docs/SECURITY.md` (termasuk catatan HMAC bukan pengganti hashing adaptif untuk password lemah).
+- [x] **B1** `scripts/setup-password`: generator password acak 24–32+ karakter / validator entropi; cetak instruksi `wrangler secret put` (jangan simpan password). — Selesai Sesi 2; bukti commit fase B dan tes tercantum di Status Log.
+- [x] **B2** Verifikasi HMAC-SHA-256 + pepper, perbandingan constant-time; secret terpisah untuk verifier & signing session. `POST /api/auth/login`. — Selesai Sesi 2; bukti commit fase B dan tes tercantum di Status Log.
+- [x] **B3** Session opaque: token acak, **hash di D1**, cookie `HttpOnly; Secure; SameSite`, TTL, rotasi, `POST /api/auth/logout` benar-benar invalidasi, `GET /api/auth/session`. `Cache-Control: no-store` untuk data privat. — Selesai Sesi 2; bukti commit fase B dan tes tercantum di Status Log.
+- [x] **B4** Rate limit + lockout persisten di D1 (`auth_attempts`), tanpa log password. — Selesai Sesi 2; bukti commit fase B dan tes tercantum di Status Log.
+- [x] **B5** Origin/CSRF check semua mutasi; CORS same-origin ketat; security headers (CSP kompatibel PDF.js/worker, nosniff, frame-ancestors, referrer-policy, HSTS). — Selesai Sesi 2; bukti commit fase B dan tes tercantum di Status Log.
+- [x] **B6** Middleware auth untuk semua `/api/*` selain login/health; uji akses anonim ditolak. — Selesai Sesi 2; bukti commit fase B dan tes tercantum di Status Log.
+- [x] **B7** CRUD buku: `GET/POST /api/books`, `DELETE /api/books/:id` (hapus konsisten R2 + FTS + terkait), `POST /api/books/:id/upload` (stream ke R2 atau presigned PUT — putuskan lewat uji CPU/memori, catat keputusan di `docs/ARCHITECTURE.md`). — Selesai Sesi 2; bukti commit fase B dan tes tercantum di Status Log.
+- [x] **B8** Halaman `/login` (password-only, show/hide, loading, error sederhana) + guard route SPA. — Selesai Sesi 2; bukti commit fase B dan tes tercantum di Status Log.
+- [x] **B9** Tes: salah password, brute force, tampering cookie, expiry, logout, replay, CSRF, akses tanpa login, proteksi R2. — Selesai Sesi 2; bukti commit fase B dan tes tercantum di Status Log.
+- [x] **B10** `docs/SECURITY.md` (termasuk catatan HMAC bukan pengganti hashing adaptif untuk password lemah). — Selesai Sesi 2; bukti commit fase B dan tes tercantum di Status Log.
 
 ### FASE C — Book Ingestion  (SPEK §4)
 
@@ -360,6 +360,23 @@ Format entri (tambah di **paling bawah**, jangan hapus entri lama):
 
 ---
 
+### Sesi 2 — 2026-11-06 — Implementasi fase B (branch dev)
+- Langkah dikerjakan: B1–B10 (Auth + Storage).
+- Selesai & terverifikasi:
+  - B1: generator/validator password acak panjang + verifier HMAC (commit d2198b76).
+  - B2–B6: login HMAC-SHA-256, session opaque dengan hash di D1, cookie aman, rate limit persisten, CSRF/security headers, middleware auth (commit 31b56791).
+  - B8: halaman login, AuthProvider, route guard, logout (commit 1c928425).
+  - B9: tes auth/session/rate-limit/CSRF; 18 tes auth ditambahkan (commit efcd737d); tes CRUD/upload R2 tiruan ditambahkan pada B7 (commit 1ec6500e).
+  - B7: CRUD buku dan streaming upload ke R2 dengan validasi ukuran/signature/checksum; penghapusan membersihkan prefix R2 + D1 (commit 1ec6500e).
+  - B10: dokumentasi keamanan (commit 6a49e3ed).
+- Sebagian / diblokir:
+  - Integrasi login/R2 pada Cloudflare sungguhan TIDAK DIUJI; pengujian upload menggunakan R2 tiruan.
+  - D1 lokal nyata dan batas CPU/memori Workers Free belum diverifikasi.
+  - CI GitHub Actions untuk seluruh branch belum dibuktikan dari log yang tersedia pada audit ini; jangan klaim hijau.
+- Bukti: commit di dev: d2198b76, 31b56791, efcd737d, 1c928425, 1ec6500e, 6a49e3ed. Ringkasan commit menyatakan tes auth, worker, dan web dijalankan; hasil lokal dicatat oleh pelaksana sebelumnya. DI-MOCK untuk R2; integrasi Cloudflare TIDAK DIUJI.
+- Commit/branch: 6a49e3ed di dev.
+- Keputusan baru: upload menggunakan streaming Worker → R2; alternatif presigned PUT tetap menjadi fallback bila pengujian R2/CPU nyata gagal.
+- Langkah berikutnya: FASE C, mulai C1 (PDF.js di Web Worker + Vite production build), lalu C2 parser EPUB.
 ## 8. PRAKIRAAN & PEMBAGIAN SESI
 
 Perkiraan kasar total **10–14 sesi** (satu sesi = satu giliran kerja besar). Bisa lebih panjang bila ada bug integrasi (PDF.js di Vite, FTS5 di D1) atau perubahan desain.

@@ -1,51 +1,57 @@
-# ARCHITECTURE.md
+# ARCHITECTURE.md — BYGA AI Guru Privat
 
-Dokumen ini mencatat keputusan arsitektur dan penyimpangan dari struktur target di PLAN.md §2.
-Lihat juga `PROMPT_CODEX_BYGA_AI_GURU_PRIVAT_CLOUDFLARE_FREE.md` (SPEK) untuk spesifikasi lengkap.
+Dokumen ini mencatat implementasi yang benar-benar ada di branch dev, keputusan teknis, dan batas verifikasi. Spesifikasi otoritatif tetap PROMPT_CODEX_BYGA_AI_GURU_PRIVAT_CLOUDFLARE_FREE.md; urutan kerja di PLAN.md.
 
-## Struktur repo (status: FASE A)
+## Struktur repo saat ini
 
 ```
-/apps/web                React + Vite + TS + Tailwind, SPA, PWA (shadcn/ui belum dipasang)
-/apps/worker              Hono + TS + Cloudflare Workers API
+/apps/web                 React + Vite + TS + Tailwind, SPA, auth/login
+/apps/worker              Hono + TS, auth/session + CRUD buku + R2 upload
 /packages/shared          Zod schemas, DTO, tipe, konstanta, error code
-/migrations                SQL D1 bernomor
-/.github/workflows         ci.yml
-/docs                      dokumentasi
+/migrations               SQL D1 bernomor
+/scripts                  generator password dan helper
+/docs                     arsitektur, keamanan, lisensi
+/.github/workflows        CI dan pemangkasan run manual
 ```
 
-`/packages/learning` (BKT, FSRS) dan `/packages/ai` (adapter provider) belum dibuat — akan
-ditambahkan di FASE D dan F sesuai kebutuhan, bukan di FASE A, supaya tidak ada paket kosong
-tanpa isi nyata.
+packages/learning (BKT/FSRS) dan packages/ai (adapter provider) belum dibuat; keduanya ditambahkan saat fase terkait agar tidak ada paket kosong.
 
-## Penyimpangan dari SPEK/PLAN (FASE A)
+## Status implementasi
 
-1. **shadcn/ui belum diinstal.** PLAN.md §2 menyebut shadcn/ui sebagai bagian stack frontend.
-   Di FASE A, hanya Tailwind yang dipasang karena shadcn/ui butuh pemilihan komponen yang baru
-   relevan mulai FASE B (halaman login) dan seterusnya. Komponen akan ditambahkan per kebutuhan
-   fitur, bukan di-generate penuh di awal.
-2. **Static Assets build output.** `apps/worker/wrangler.jsonc` menunjuk `../web/dist` sebagai
-   direktori assets. Ini mengasumsikan `apps/web` di-build sebelum worker di-deploy — urutan ini
-   harus dijaga di CI/CD produksi (lihat I2).
-3. **`wrangler.jsonc` berisi `database_id` placeholder** (`REPLACE_WITH_REAL_D1_ID`) karena D1
-   belum diprovisikan (butuh akses Cloudflare API yang tidak tersedia di sandbox). Pemilik wajib
-   menggantinya setelah `wrangler d1 create guru-db` (lihat I4).
+- Fase A — fondasi monorepo, Worker, SPA, shared schemas, migrasi awal, CI, dokumentasi: sudah dibuat. Migrasi D1 lokal nyata dan run CI GitHub belum dibuktikan dalam audit ini.
+- Fase B — autentikasi password-only, session, rate limit, CSRF/security headers, route guard/login, CRUD buku, upload R2 streaming: sudah diimplementasikan dan memiliki tes otomatis di branch dev.
+- Fase C — ekstraksi PDF/EPUB: belum dimulai. Langkah berikutnya C1, uji PDF.js di Web Worker dan aset worker pada Vite production build.
+- Deploy produksi: NOT DEPLOYED. ID D1 masih placeholder dan bucket/secret harus disiapkan pemilik.
 
-## Upload buku: streaming vs presigned PUT (B7)
+## Keputusan teknis
 
-Keputusan ini **belum diambil** — akan diuji dan didokumentasikan di sini saat FASE B7
-dikerjakan, berdasarkan uji CPU/memori Worker Free untuk file hingga 15 MB.
+### Frontend dan Worker
 
-## `pnpm-lock.yaml` belum di-commit (Sesi 1)
+- React + Vite + Tailwind untuk SPA; Hono pada Cloudflare Workers untuk API.
+- Satu origin untuk SPA dan API melalui Workers Static Assets.
+- PDF/EPUB diproses di browser, bukan Worker, agar parsing besar tidak menghabiskan CPU/memori request Worker.
 
-Lockfile hasil `pnpm install` tidak di-push di Sesi 1 karena ukurannya (~140 KB) berisiko
-rusak saat ditransfer manual lewat MCP tanpa akses filesystem langsung ke GitHub. CI untuk
-sementara memakai `pnpm install` biasa (bukan `--frozen-lockfile`). **Tindak lanjut:** sesi
-berikut yang punya akses `git push` langsung (mis. lewat Claude Code/terminal) sebaiknya
-men-generate ulang dan commit `pnpm-lock.yaml`, lalu kembalikan CI ke `--frozen-lockfile`.
+### Upload buku (B7)
 
-## Status deploy
+Upload saat ini menggunakan streaming request body dari Worker ke bucket R2 privat, bukan buffering seluruh file di memori Worker. Kunci objek memakai UUID dan DTO tidak mengungkap kunci R2. R2 tiruan memverifikasi alur checksum/ukuran/signature dalam tes.
 
-**NOT DEPLOYED.** Sandbox Claude tidak punya akses Cloudflare API (lihat jaringan yang
-diizinkan). Build/lint/typecheck/test dijalankan lokal; deploy nyata adalah tanggung jawab
-pemilik (SPEK §17, PLAN.md I8).
+Belum diverifikasi: perilaku checksum pada R2 sungguhan dan batas CPU/memori Workers Free untuk file mendekati 15 MB. Jika pengujian nyata gagal, evaluasi presigned PUT langsung browser → R2.
+
+### Static Assets dan konfigurasi
+
+apps/worker/wrangler.jsonc menunjuk ../web/dist; web harus dibangun sebelum dry-run/deploy Worker. database_id masih placeholder REPLACE_WITH_REAL_D1_ID sampai pemilik membuat D1.
+
+### Lockfile
+
+pnpm-lock.yaml belum ada di branch dev saat audit. CI sementara memakai pnpm install, bukan --frozen-lockfile. Tambahkan lockfile dari lingkungan yang dapat menjalankan pnpm dan ubah CI ke instalasi frozen setelah diverifikasi.
+
+## Status verifikasi
+
+| Area | Status |
+|---|---|
+| Auth/session/CSRF/rate limit | Unit/integration tests tercatat pada commit fase B |
+| CRUD + upload | Tes menggunakan R2 tiruan |
+| D1 lokal nyata | Belum diverifikasi |
+| R2 nyata + limit CPU Workers Free | Belum diverifikasi |
+| GitHub Actions CI terbaru | Belum dikonfirmasi pada audit ini |
+| Cloudflare production deploy | NOT DEPLOYED |
