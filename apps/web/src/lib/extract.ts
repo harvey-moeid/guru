@@ -79,8 +79,8 @@ export async function extractPdf(file: File, onProgress?: ExtractionProgress): P
       const page = await document.getPage(pageNumber);
       const content = await page.getTextContent();
       const lines = content.items
-        .filter((item) => "str" in item && typeof item.str === "string")
-        .map((item) => item.str.trim()).filter(Boolean);
+        .flatMap((item) => "str" in item && typeof item.str === "string" ? [item.str.trim()] : [])
+        .filter(Boolean);
       const pageText = lines.join(" ").replace(/\s{2,}/g, " ");
       const extracted = paragraphsFromText(pageText, "p" + pageNumber, pageNumber - 1);
       for (const paragraph of extracted) { paragraph.sourceOrder = all.length; all.push(paragraph); }
